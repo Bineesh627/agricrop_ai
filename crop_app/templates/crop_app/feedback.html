@@ -1,0 +1,73 @@
+{% extends 'crop_app/base.html' %}
+
+{% block title %}Farmer Help & Support | AgriCrop AI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- Left Column: Submit Form -->
+        <div class="col-md-5">
+            <div class="agri-card overflow-hidden">
+                <div class="agri-card-header">
+                    <i class="fa-solid fa-paper-plane me-2"></i> Submit Inquiry / Feedback
+                </div>
+                <div class="p-4">
+                    <form method="post" action="{% url 'feedback' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">Subject / Question Title</label>
+                            {{ form.subject }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">Detailed Description</label>
+                            {{ form.message }}
+                        </div>
+                        <button type="submit" class="btn btn-agri w-100 py-2">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Send to Administrator
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: My Feedback Logs & Admin Responses -->
+        <div class="col-md-7">
+            <div class="agri-card overflow-hidden">
+                <div class="agri-card-header bg-dark">
+                    <i class="fa-solid fa-comments me-2"></i> My Inquiries & Admin Responses
+                </div>
+                <div class="p-4">
+                    {% for fb in feedbacks %}
+                    <div class="card mb-3 border-0 shadow-sm">
+                        <div class="card-body bg-light rounded">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="font-weight-bold text-dark mb-0">{{ fb.subject }}</h6>
+                                {% if fb.status == 'RESOLVED' %}
+                                    <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i> Responded</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i> Pending Review</span>
+                                {% endif %}
+                            </div>
+                            <p class="small text-muted mb-2">{{ fb.message }}</p>
+                            <small class="text-secondary d-block mb-2">Submitted on {{ fb.created_at|date:"M d, Y - H:i" }}</small>
+
+                            {% if fb.admin_reply %}
+                            <div class="p-3 bg-white border-start border-success border-4 rounded mt-3">
+                                <span class="badge bg-success mb-1"><i class="fa-solid fa-user-shield me-1"></i> Administrator Reply</span>
+                                <p class="small text-dark mb-0 font-weight-medium">{{ fb.admin_reply }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-comment-dots fs-1 mb-2 text-secondary d-block"></i>
+                        You have not submitted any inquiries yet. Use the form on the left to ask a question!
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

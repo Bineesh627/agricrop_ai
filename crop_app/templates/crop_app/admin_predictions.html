@@ -1,0 +1,75 @@
+{% extends 'crop_app/base.html' %}
+
+{% block title %}Prediction Audit Logs | Admin AgriCrop AI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="font-weight-bold mb-1">
+                <i class="fa-solid fa-list-check text-success me-2"></i> Prediction Audit Logs
+            </h2>
+            <p class="text-muted mb-0">Full inspection of all AI crop recommendations generated across the platform</p>
+        </div>
+        
+        <form method="get" action="{% url 'admin_predictions' %}" class="d-flex gap-2">
+            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search crop, user, soil...">
+            <button type="submit" class="btn btn-agri"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </form>
+    </div>
+
+    <div class="agri-card overflow-hidden">
+        <div class="agri-card-header d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-database me-2"></i> Prediction Logs ({{ predictions.count }})</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>User</th>
+                        <th>Predicted Crop</th>
+                        <th>Confidence</th>
+                        <th>N - P - K</th>
+                        <th>Temp / Humidity</th>
+                        <th>pH</th>
+                        <th>Rainfall</th>
+                        <th>Soil / Season</th>
+                        <th>Date</th>
+                        <th class="text-end">View</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in predictions %}
+                    <tr>
+                        <td class="font-weight-bold">#{{ p.id }}</td>
+                        <td>
+                            <strong>{{ p.user.username|default:"Guest User" }}</strong>
+                        </td>
+                        <td><span class="font-weight-bold text-success fs-6">{{ p.predicted_crop|title }}</span></td>
+                        <td><span class="badge bg-success">{{ p.confidence_score }}%</span></td>
+                        <td>{{ p.nitrogen }} - {{ p.phosphorus }} - {{ p.potassium }}</td>
+                        <td>{{ p.temperature }}°C / {{ p.humidity }}%</td>
+                        <td>{{ p.ph }}</td>
+                        <td>{{ p.rainfall }} mm</td>
+                        <td>{{ p.soil_type }} ({{ p.season }})</td>
+                        <td class="text-muted">{{ p.created_at|date:"M d, Y H:i" }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'result' p.pk %}" class="btn btn-sm btn-outline-success">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center py-5 text-muted">
+                            No prediction audit logs match your search.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

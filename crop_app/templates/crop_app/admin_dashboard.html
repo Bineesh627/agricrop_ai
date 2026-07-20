@@ -1,0 +1,203 @@
+{% extends 'crop_app/base.html' %}
+
+{% block title %}Admin Dashboard | AgriCrop AI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Admin Header Banner -->
+    <div class="agri-card mb-4 p-4 text-white" style="background: linear-gradient(135deg, #081c15, #1b4332);">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <span class="badge bg-warning text-dark px-3 py-1 fs-6 rounded-pill mb-2">
+                    <i class="fa-solid fa-shield-halved me-1"></i> Administrator Control Panel
+                </span>
+                <h2 class="font-weight-bold mb-0">System Executive Dashboard</h2>
+            </div>
+            <div>
+                <a href="{% url 'admin_ml_model' %}" class="btn btn-sm btn-outline-light">
+                    <i class="fa-solid fa-brain me-1"></i> ML Engine Status: <span class="badge bg-success">Active (99.77%)</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Executive Stat Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-box border-start border-success border-4">
+                <div class="stat-icon stat-icon-green">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0 font-weight-bold">{{ total_users }}</h3>
+                    <span class="text-muted small">Total Accounts</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box border-start border-info border-4">
+                <div class="stat-icon stat-icon-blue">
+                    <i class="fa-solid fa-wheat-field"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0 font-weight-bold">{{ total_farmers }}</h3>
+                    <span class="text-muted small">Registered Farmers</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box border-start border-warning border-4">
+                <div class="stat-icon stat-icon-gold">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0 font-weight-bold">{{ total_predictions }}</h3>
+                    <span class="text-muted small">Total AI Predictions</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box border-start border-danger border-4">
+                <div class="stat-icon stat-icon-coral">
+                    <i class="fa-solid fa-comments"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0 font-weight-bold">{{ pending_feedbacks }}</h3>
+                    <span class="text-muted small">Pending Inquiries</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts & Analytics Section -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="agri-card p-4 h-100">
+                <h5 class="font-weight-bold text-success mb-3">
+                    <i class="fa-solid fa-chart-bar me-2"></i> Top Recommended Crops Distribution
+                </h5>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="adminCropsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="agri-card overflow-hidden h-100">
+                <div class="agri-card-header bg-dark d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-user-plus me-2"></i> Recent Registrations</span>
+                    <a href="{% url 'admin_users' %}" class="btn btn-sm btn-outline-light py-0">View All</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in recent_users %}
+                            <tr>
+                                <td>
+                                    <strong>{{ u.username }}</strong>
+                                    <span class="d-block text-muted">{{ u.email }}</span>
+                                </td>
+                                <td>
+                                    {% if u.profile.is_admin_user %}
+                                        <span class="badge bg-warning text-dark">Admin</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Farmer</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted">{{ u.date_joined|date:"M d" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Predictions Audit Table -->
+    <div class="agri-card overflow-hidden">
+        <div class="agri-card-header d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-clock-rotate-left me-2"></i> Recent Prediction System Audit</span>
+            <a href="{% url 'admin_predictions' %}" class="btn btn-sm btn-outline-light py-0">Full Audit Log</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Predicted Crop</th>
+                        <th>Confidence</th>
+                        <th>NPK Values</th>
+                        <th>Timestamp</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in recent_predictions %}
+                    <tr>
+                        <td>#{{ p.id }}</td>
+                        <td>{{ p.user.username|default:"Guest" }}</td>
+                        <td><strong class="text-success">{{ p.predicted_crop|title }}</strong></td>
+                        <td><span class="badge bg-success">{{ p.confidence_score }}%</span></td>
+                        <td>N:{{ p.nitrogen }}, P:{{ p.phosphorus }}, K:{{ p.potassium }}</td>
+                        <td>{{ p.created_at|date:"M d, H:i" }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'result' p.pk %}" class="btn btn-sm btn-outline-success">View</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No prediction audit logs found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rawData = JSON.parse('{{ top_crops_chart|safe }}');
+    const labels = rawData.map(item => item.crop);
+    const counts = rawData.map(item => item.count);
+
+    const ctx = document.getElementById('adminCropsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels.length ? labels : ['Rice', 'Grapes', 'Maize', 'Apple', 'Cotton'],
+            datasets: [{
+                label: 'Prediction Count',
+                data: counts.length ? counts : [12, 8, 7, 5, 4],
+                backgroundColor: [
+                    '#2d6a4f', '#52b788', '#f4a261', '#e76f51', '#0284c7'
+                ],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

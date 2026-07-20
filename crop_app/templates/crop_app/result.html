@@ -1,0 +1,232 @@
+{% extends 'crop_app/base.html' %}
+
+{% block title %}Recommendation Result - {{ record.predicted_crop|title }} | AgriCrop AI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Top Result Banner -->
+    <div class="agri-card mb-4 overflow-hidden border-0 shadow-lg">
+        <div class="p-4 p-md-5 text-white" style="background: linear-gradient(135deg, #081c15 0%, #1b4332 50%, #2d6a4f 100%);">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <span class="badge bg-warning text-dark px-3 py-2 fs-6 rounded-pill mb-3">
+                        <i class="fa-solid fa-square-check me-1"></i> AI Recommended Crop Result
+                    </span>
+                    <h1 class="display-4 font-weight-bold mb-2">
+                        <i class="fa-solid {{ crop_info.icon_class|default:'fa-seedling' }} text-success me-3"></i>
+                        {{ crop_info.display_name|default:record.predicted_crop|title }}
+                    </h1>
+                    <p class="lead text-white-50 mb-4">
+                        Based on your field's soil nutrient parameters and climatic signature, <strong>{{ crop_info.display_name|default:record.predicted_crop|title }}</strong> is the optimal crop for maximum yield.
+                    </p>
+                    
+                    <div class="d-flex align-items-center gap-3">
+                        <div>
+                            <span class="text-muted small d-block">AI Model Match Confidence</span>
+                            <div class="progress mt-1" style="width: 200px; height: 12px; background: rgba(255,255,255,0.2);">
+                                <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ record.confidence_score }}%;"></div>
+                            </div>
+                        </div>
+                        <span class="fs-4 font-weight-bold text-success">{{ record.confidence_score }}%</span>
+                    </div>
+                </div>
+
+                <div class="col-md-4 text-center mt-4 mt-md-0">
+                    <div class="bg-white text-dark p-4 rounded-4 shadow">
+                        <span class="text-muted small text-uppercase font-weight-bold d-block mb-1">Crop Category</span>
+                        <h4 class="font-weight-bold text-success mb-3">{{ crop_info.category|default:"Cereal" }}</h4>
+                        <a href="#cultivation-guide" class="btn btn-agri btn-sm w-100">
+                            <i class="fa-solid fa-book-open me-1"></i> View Growing Guide
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column: Input Parameter Summary & Visual Breakdown -->
+        <div class="col-lg-5">
+            <div class="agri-card p-4 h-100">
+                <h5 class="font-weight-bold text-success mb-3">
+                    <i class="fa-solid fa-list-check me-2"></i> Field Input Metrics
+                </h5>
+                <div class="row g-2 mb-4">
+                    <div class="col-6">
+                        <div class="metric-box">
+                            <span class="metric-label">Nitrogen (N)</span>
+                            <div class="metric-val">{{ record.nitrogen }} <small class="fs-6 text-muted">kg/ha</small></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-box">
+                            <span class="metric-label">Phosphorus (P)</span>
+                            <div class="metric-val">{{ record.phosphorus }} <small class="fs-6 text-muted">kg/ha</small></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-box">
+                            <span class="metric-label">Potassium (K)</span>
+                            <div class="metric-val">{{ record.potassium }} <small class="fs-6 text-muted">kg/ha</small></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-box">
+                            <span class="metric-label">Soil pH</span>
+                            <div class="metric-val">{{ record.ph }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-box">
+                            <span class="metric-label">Temperature</span>
+                            <div class="metric-val">{{ record.temperature }} <small class="fs-6 text-muted">°C</small></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-box">
+                            <span class="metric-label">Humidity</span>
+                            <div class="metric-val">{{ record.humidity }} <small class="fs-6 text-muted">%</small></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-box">
+                            <span class="metric-label">Rainfall</span>
+                            <div class="metric-val">{{ record.rainfall }} <small class="fs-6 text-muted">mm</small></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-box">
+                            <span class="metric-label">Soil / Season</span>
+                            <div class="metric-val fs-6">{{ record.soil_type }} / {{ record.season }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Radar Chart Visualizer -->
+                <h6 class="font-weight-bold text-dark mb-2">Nutrient & Climate Radar Visualizer</h6>
+                <div style="height: 250px; position: relative;">
+                    <canvas id="nutrientChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Cultivation Advice & Alternatives -->
+        <div class="col-lg-7" id="cultivation-guide">
+            <div class="agri-card p-4 mb-4">
+                <h4 class="font-weight-bold text-success mb-3">
+                    <i class="fa-solid fa-wheat-awn-circle-exclamation me-2"></i> Cultivation & Agronomic Guidance
+                </h4>
+
+                <p class="text-secondary mb-4">{{ crop_info.description }}</p>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small d-block">Water Requirement</span>
+                            <strong class="text-dark"><i class="fa-solid fa-droplet text-primary me-1"></i> {{ crop_info.water_requirement }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small d-block">Harvest Duration</span>
+                            <strong class="text-dark"><i class="fa-solid fa-calendar-day text-warning me-1"></i> {{ crop_info.harvest_duration }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small d-block">Ideal Soil pH Range</span>
+                            <strong class="text-dark"><i class="fa-solid fa-flask text-success me-1"></i> {{ crop_info.ideal_ph_range }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small d-block">Ideal Temperature</span>
+                            <strong class="text-dark"><i class="fa-solid fa-temperature-three-quarters text-danger me-1"></i> {{ crop_info.ideal_temp_range }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-success border-0 shadow-sm mb-4">
+                    <h6 class="font-weight-bold text-success mb-2">
+                        <i class="fa-solid fa-lightbulb me-1"></i> Soil Management & Fertilizer Recommendation:
+                    </h6>
+                    <p class="small mb-0">{{ crop_info.fertilizer_tips }}</p>
+                </div>
+
+                <!-- Runner-Up / Alternative Crop Recommendations -->
+                {% if alternatives %}
+                    <h5 class="font-weight-bold text-dark mb-3">Top Alternative Crop Options</h5>
+                    <div class="row g-2">
+                        {% for alt in alternatives %}
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded border text-center">
+                                <i class="fa-solid {{ alt.icon }} fs-4 text-success mb-2 d-block"></i>
+                                <h6 class="font-weight-bold mb-1">{{ alt.display_name }}</h6>
+                                <span class="badge bg-secondary">{{ alt.confidence }}% Suitability</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <a href="{% url 'recommend' %}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-rotate-left me-1"></i> Perform Another Test
+                </a>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-success" onclick="window.print()">
+                        <i class="fa-solid fa-print me-1"></i> Print Summary Report
+                    </button>
+                    <a href="{% url 'history' %}" class="btn btn-agri">
+                        <i class="fa-solid fa-clock-rotate-left me-1"></i> View History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('nutrientChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Nitrogen', 'Phosphorus', 'Potassium', 'Temp (°C)', 'Humidity (%)', 'pH (x10)'],
+            datasets: [{
+                label: 'Your Soil Input',
+                data: [
+                    {{ record.nitrogen }},
+                    {{ record.phosphorus }},
+                    {{ record.potassium }},
+                    {{ record.temperature }},
+                    {{ record.humidity }},
+                    {{ record.ph }} * 10
+                ],
+                backgroundColor: 'rgba(82, 183, 136, 0.25)',
+                borderColor: '#2d6a4f',
+                pointBackgroundColor: '#1b4332',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#2d6a4f'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(0,0,0,0.1)' },
+                    suggestedMin: 0,
+                    suggestedMax: 150
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

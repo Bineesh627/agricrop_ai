@@ -1,0 +1,169 @@
+{% extends 'crop_app/base.html' %}
+
+{% block title %}Recommendation Tool | AgriCrop AI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header Card -->
+            <div class="agri-card mb-4 p-4 text-white" style="background: linear-gradient(135deg, #1b4332, #2d6a4f);">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div>
+                        <h2 class="font-weight-bold mb-1">
+                            <i class="fa-solid fa-wand-magic-sparkles text-warning me-2"></i> Crop Recommendation Engine
+                        </h2>
+                        <p class="mb-0 text-white-50">Enter your soil test parameters and regional weather data to receive an instant ML crop prediction.</p>
+                    </div>
+                    <span class="badge bg-success fs-6 py-2 px-3 rounded-pill">
+                        <i class="fa-solid fa-shield-check me-1"></i> Trained on 2,200 Agricultural Records
+                    </span>
+                </div>
+            </div>
+
+            <!-- Quick Presets Selection Box -->
+            <div class="agri-card p-3 mb-4 bg-light border">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="font-weight-bold text-dark small text-uppercase">
+                        <i class="fa-solid fa-bolt text-warning me-1"></i> Quick Test Sample Presets:
+                    </span>
+                    <small class="text-muted">Click any preset to auto-fill sample values</small>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="preset-pill preset-btn" data-preset="rice">
+                        <i class="fa-solid fa-wheat-awn text-warning"></i> Rice (Monsoon Clayey)
+                    </button>
+                    <button type="button" class="preset-pill preset-btn" data-preset="maize">
+                        <i class="fa-solid fa-sun text-warning"></i> Maize (Loamy)
+                    </button>
+                    <button type="button" class="preset-pill preset-btn" data-preset="chickpea">
+                        <i class="fa-solid fa-seedling text-success"></i> Chickpea (Cool Rabi)
+                    </button>
+                    <button type="button" class="preset-pill preset-btn" data-preset="grapes">
+                        <i class="fa-solid fa-wine-glass text-danger"></i> Grapes (High Potash)
+                    </button>
+                    <button type="button" class="preset-pill preset-btn" data-preset="cotton">
+                        <i class="fa-solid fa-shirt text-primary"></i> Cotton (Black Soil)
+                    </button>
+                    <button type="button" class="preset-pill preset-btn" data-preset="apple">
+                        <i class="fa-solid fa-apple-whole text-danger"></i> Apple (Temperate)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Input Form Card -->
+            <div class="agri-card overflow-hidden">
+                <div class="agri-card-header">
+                    <i class="fa-solid fa-sliders me-2"></i> Enter Soil & Climate Parameters
+                </div>
+                <div class="p-4">
+                    <form method="post" action="{% url 'recommend' %}" id="cropForm">
+                        {% csrf_token %}
+
+                        <div class="row g-4">
+                            <!-- Column 1: Soil NPK Nutrients & pH -->
+                            <div class="col-md-6 border-end">
+                                <h5 class="text-success font-weight-bold mb-3">
+                                    <i class="fa-solid fa-vial me-2"></i> Soil Chemical Nutrients
+                                </h5>
+
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-bold d-flex justify-content-between">
+                                        <span>Nitrogen (N) <span class="text-danger">*</span></span>
+                                        <small class="text-muted">Target: 0 - 140 kg/ha</small>
+                                    </label>
+                                    {{ form.nitrogen }}
+                                    <div class="form-text">Ratio of Nitrogen content in soil.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-bold d-flex justify-content-between">
+                                        <span>Phosphorus (P) <span class="text-danger">*</span></span>
+                                        <small class="text-muted">Target: 5 - 145 kg/ha</small>
+                                    </label>
+                                    {{ form.phosphorus }}
+                                    <div class="form-text">Ratio of Phosphorus content in soil.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-bold d-flex justify-content-between">
+                                        <span>Potassium (K) <span class="text-danger">*</span></span>
+                                        <small class="text-muted">Target: 5 - 205 kg/ha</small>
+                                    </label>
+                                    {{ form.potassium }}
+                                    <div class="form-text">Ratio of Potassium content in soil.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-bold d-flex justify-content-between">
+                                        <span>Soil pH Level <span class="text-danger">*</span></span>
+                                        <small class="text-muted">Range: 3.5 - 10.0</small>
+                                    </label>
+                                    {{ form.ph }}
+                                    <div class="form-text">Acidity/Alkalinity level of the soil.</div>
+                                </div>
+                            </div>
+
+                            <!-- Column 2: Climate & Seasonal Data -->
+                            <div class="col-md-6">
+                                <h5 class="text-success font-weight-bold mb-3">
+                                    <i class="fa-solid fa-cloud-sun-rain me-2"></i> Climate & Regional Conditions
+                                </h5>
+
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-bold d-flex justify-content-between">
+                                        <span>Temperature (°C) <span class="text-danger">*</span></span>
+                                        <small class="text-muted">Range: 8 - 45 °C</small>
+                                    </label>
+                                    {{ form.temperature }}
+                                    <div class="form-text">Average ambient temperature in Celsius.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-bold d-flex justify-content-between">
+                                        <span>Relative Humidity (%) <span class="text-danger">*</span></span>
+                                        <small class="text-muted">Range: 14 - 100%</small>
+                                    </label>
+                                    {{ form.humidity }}
+                                    <div class="form-text">Relative humidity in percentage.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label font-weight-bold d-flex justify-content-between">
+                                        <span>Annual Rainfall (mm) <span class="text-danger">*</span></span>
+                                        <small class="text-muted">Range: 20 - 300 mm</small>
+                                    </label>
+                                    {{ form.rainfall }}
+                                    <div class="form-text">Average rainfall in millimeters.</div>
+                                </div>
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label font-weight-bold">Soil Type</label>
+                                        {{ form.soil_type }}
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label font-weight-bold">Cropping Season</label>
+                                        {{ form.season }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-end gap-3">
+                            <button type="reset" class="btn btn-outline-secondary px-4">
+                                <i class="fa-solid fa-rotate-left me-1"></i> Reset Inputs
+                            </button>
+                            <button type="submit" class="btn btn-agri btn-lg px-5 shadow">
+                                <i class="fa-solid fa-brain me-2"></i> Generate AI Recommendation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

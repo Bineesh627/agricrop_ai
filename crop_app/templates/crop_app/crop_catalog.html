@@ -1,0 +1,84 @@
+{% extends 'crop_app/base.html' %}
+
+{% block title %}Crop Knowledge Catalog | AgriCrop AI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="font-weight-bold mb-1">
+                <i class="fa-solid fa-book-open text-success me-2"></i> Crop Knowledge Encyclopedia
+            </h2>
+            <p class="text-muted mb-0">Browse agricultural parameters, water requirements, and cultivation advice for 22 crops</p>
+        </div>
+        
+        <!-- Search & Filter Form -->
+        <form method="get" action="{% url 'crop_catalog' %}" class="d-flex gap-2">
+            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search crops...">
+            <button type="submit" class="btn btn-agri"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </form>
+    </div>
+
+    <!-- Category Pills -->
+    <div class="mb-4 d-flex flex-wrap gap-2">
+        <a href="{% url 'crop_catalog' %}" class="btn btn-sm {% if not selected_category %}btn-success{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
+            All Crops (22)
+        </a>
+        {% for cat in categories %}
+            <a href="{% url 'crop_catalog' %}?category={{ cat }}" class="btn btn-sm {% if selected_category == cat %}btn-success{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
+                {{ cat }}s
+            </a>
+        {% endfor %}
+    </div>
+
+    <!-- Crops Grid -->
+    <div class="row g-4">
+        {% for crop in crops %}
+        <div class="col-md-6 col-lg-4">
+            <div class="agri-card h-100 d-flex flex-column">
+                <div class="agri-card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid {{ crop.icon_class }} me-2"></i>{{ crop.display_name }}</span>
+                    <span class="badge bg-light text-dark">{{ crop.category }}</span>
+                </div>
+                <div class="p-3 flex-grow-1">
+                    <p class="text-muted small mb-3">{{ crop.description|truncatewords:24 }}</p>
+                    
+                    <div class="row g-2 text-center mb-3">
+                        <div class="col-6">
+                            <div class="bg-light p-2 rounded">
+                                <span class="d-block small text-muted">Water Need</span>
+                                <strong class="small text-dark">{{ crop.water_requirement }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-light p-2 rounded">
+                                <span class="d-block small text-muted">Harvesting</span>
+                                <strong class="small text-dark">{{ crop.harvest_duration }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-top pt-2">
+                        <small class="text-muted d-block">Ideal Soil pH: <strong>{{ crop.ideal_ph_range }}</strong></small>
+                        <small class="text-muted d-block">Ideal Temp: <strong>{{ crop.ideal_temp_range }}</strong></small>
+                    </div>
+                </div>
+                <div class="p-3 pt-0 border-top-0">
+                    <a href="{% url 'crop_detail' crop.name %}" class="btn btn-sm btn-agri w-100">
+                        <i class="fa-solid fa-circle-info me-1"></i> Full Agronomic Guide
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 py-5 text-center text-muted">
+            <i class="fa-solid fa-magnifying-glass fs-1 mb-3 text-secondary d-block"></i>
+            No crops found matching your search term or category filter.
+            <div class="mt-3">
+                <a href="{% url 'crop_catalog' %}" class="btn btn-outline-success btn-sm">Reset Catalog Filters</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

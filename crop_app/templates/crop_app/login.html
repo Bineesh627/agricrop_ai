@@ -1,0 +1,47 @@
+{% extends 'crop_app/base.html' %}
+
+{% block title %}Login | AgriCrop AI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="agri-card overflow-hidden">
+                <div class="agri-card-header text-center py-4">
+                    <i class="fa-solid fa-right-to-bracket fs-2 mb-2 d-block text-success"></i>
+                    <h3 class="font-weight-bold mb-0">Welcome Back</h3>
+                    <p class="small text-white-50 mb-0">Sign in to your AgriCrop account</p>
+                </div>
+                <div class="p-4">
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-user text-muted"></i></span>
+                                {{ form.username }}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label font-weight-bold">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fa-solid fa-key text-muted"></i></span>
+                                {{ form.password }}
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-agri btn-lg w-100 py-3 shadow-sm mb-3">
+                            <i class="fa-solid fa-right-to-bracket me-2"></i> Log In
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-3 small text-muted">
+                        Don't have an account? <a href="{% url 'register' %}" class="text-success font-weight-bold">Create new Farmer account</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

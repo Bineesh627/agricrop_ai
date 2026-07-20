@@ -1,0 +1,68 @@
+{% extends 'crop_app/base.html' %}
+
+{% block title %}Feedback Center | Admin AgriCrop AI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="font-weight-bold mb-1">
+                <i class="fa-solid fa-comments text-success me-2"></i> Farmer Feedback & Support Management
+            </h2>
+            <p class="text-muted mb-0">Respond to farmer inquiries and provide expert agronomic advice</p>
+        </div>
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for fb in feedbacks %}
+        <div class="col-lg-6">
+            <div class="agri-card h-100 p-4 border-start border-4 {% if fb.status == 'RESOLVED' %}border-success{% else %}border-warning{% endif %}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge {% if fb.status == 'RESOLVED' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                        {{ fb.get_status_display }}
+                    </span>
+                    <small class="text-muted">{{ fb.created_at|date:"M d, Y H:i" }}</small>
+                </div>
+
+                <h5 class="font-weight-bold text-dark mb-1">{{ fb.subject }}</h5>
+                <p class="small text-muted mb-2">Submitted by: <strong>{{ fb.user.username }}</strong> ({{ fb.user.email }})</p>
+                <p class="text-secondary bg-light p-3 rounded mb-3">{{ fb.message }}</p>
+
+                {% if fb.admin_reply %}
+                    <div class="p-3 bg-success-subtle text-success rounded border border-success mb-3">
+                        <small class="d-block font-weight-bold mb-1"><i class="fa-solid fa-reply me-1"></i> Current Reply:</small>
+                        <p class="mb-0 small text-dark">{{ fb.admin_reply }}</p>
+                    </div>
+                {% endif %}
+
+                <!-- Reply Form -->
+                <form method="post" action="{% url 'admin_feedback' %}" class="mt-auto">
+                    {% csrf_token %}
+                    <input type="hidden" name="feedback_id" value="{{ fb.id }}">
+                    <div class="mb-2">
+                        <textarea name="admin_reply" rows="2" class="form-control form-control-sm" placeholder="Type official response to farmer...">{{ fb.admin_reply|default:'' }}</textarea>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <select name="status" class="form-select form-select-sm w-auto">
+                            <option value="RESOLVED" {% if fb.status == 'RESOLVED' %}selected{% endif %}>Mark as Resolved</option>
+                            <option value="PENDING" {% if fb.status == 'PENDING' %}selected{% endif %}>Keep Pending</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-agri">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Send Reply
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5 text-muted">
+            <i class="fa-solid fa-comments fs-1 d-block mb-2 text-secondary"></i>
+            No farmer feedback entries received yet.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

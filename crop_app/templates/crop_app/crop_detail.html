@@ -1,0 +1,99 @@
+{% extends 'crop_app/base.html' %}
+
+{% block title %}{{ crop.display_name }} Guide | AgriCrop AI{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-3">
+        <a href="{% url 'crop_catalog' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Crop Catalog
+        </a>
+    </div>
+
+    <div class="agri-card overflow-hidden mb-4">
+        <div class="p-4 p-md-5 text-white" style="background: linear-gradient(135deg, #1b4332, #40916c);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-white text-success rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 80px; height: 80px; font-size: 2.2rem;">
+                    <i class="fa-solid {{ crop.icon_class }}"></i>
+                </div>
+                <div>
+                    <span class="badge bg-warning text-dark px-3 py-1 fs-6 rounded-pill mb-2">{{ crop.category }}</span>
+                    <h1 class="font-weight-bold mb-0">{{ crop.display_name }}</h1>
+                    <p class="text-white-50 mb-0">Scientific Agronomic Guidelines & Ideal Thresholds</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4">
+            <h4 class="font-weight-bold text-success mb-3">Crop Profile Overview</h4>
+            <p class="lead text-secondary mb-4">{{ crop.description }}</p>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded border text-center">
+                        <span class="text-muted small d-block">Ideal Nitrogen (N)</span>
+                        <h5 class="font-weight-bold text-dark mb-0">{{ crop.ideal_n_range }}</h5>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded border text-center">
+                        <span class="text-muted small d-block">Ideal Phosphorus (P)</span>
+                        <h5 class="font-weight-bold text-dark mb-0">{{ crop.ideal_p_range }}</h5>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded border text-center">
+                        <span class="text-muted small d-block">Ideal Potassium (K)</span>
+                        <h5 class="font-weight-bold text-dark mb-0">{{ crop.ideal_k_range }}</h5>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded border text-center">
+                        <span class="text-muted small d-block">Ideal Soil pH</span>
+                        <h5 class="font-weight-bold text-dark mb-0">{{ crop.ideal_ph_range }}</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="agri-card p-4 border-0 bg-light">
+                        <h5 class="font-weight-bold text-success mb-3">
+                            <i class="fa-solid fa-droplet me-2"></i> Water & Climate Requirements
+                        </h5>
+                        <ul class="list-group list-group-flush bg-transparent">
+                            <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                <span>Water Requirement:</span>
+                                <strong>{{ crop.water_requirement }}</strong>
+                            </li>
+                            <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                <span>Ideal Temperature:</span>
+                                <strong>{{ crop.ideal_temp_range }}</strong>
+                            </li>
+                            <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                <span>Harvest Duration:</span>
+                                <strong>{{ crop.harvest_duration }}</strong>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="agri-card p-4 border-0 bg-light">
+                        <h5 class="font-weight-bold text-success mb-3">
+                            <i class="fa-solid fa-seedling me-2"></i> Soil & Fertilizer Best Practices
+                        </h5>
+                        <p class="small text-secondary mb-0">{{ crop.fertilizer_tips }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center pt-3">
+                <a href="{% url 'recommend' %}" class="btn btn-agri btn-lg px-5">
+                    <i class="fa-solid fa-wand-magic-sparkles me-2"></i> Check Soil Compatibility for {{ crop.display_name }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
