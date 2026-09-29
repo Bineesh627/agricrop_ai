@@ -1,0 +1,6 @@
+# AgriCrop AI dependencies
+Django>=4.2,<5.0
+scikit-learn
+pandas
+numpy
+joblib
