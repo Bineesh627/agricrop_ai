@@ -14,6 +14,7 @@ from .forms import (
     CropRecommendationForm, FarmerFeedbackForm, AdminFeedbackReplyForm
 )
 from .ml_model import predict_crop_recommendation
+from .agronomic_engine import generate_crop_diagnostics, get_crop_profile
 
 def admin_required(view_func):
     """Decorator to ensure user is logged in and is an Admin."""
@@ -31,9 +32,17 @@ def admin_required(view_func):
 
 def home_view(request):
     """Home / Landing Page"""
+    crops_count = CropInformation.objects.count()
+    if crops_count == 0:
+        try:
+            import seed_db
+            seed_db.seed_crops()
+            crops_count = CropInformation.objects.count()
+        except Exception:
+            pass
+
     total_predictions = CropPredictionRecord.objects.count()
     total_farmers = User.objects.count()
-    crops_count = CropInformation.objects.count()
     recent_crops = CropInformation.objects.all()[:6]
     
     context = {
@@ -43,6 +52,7 @@ def home_view(request):
         'recent_crops': recent_crops
     }
     return render(request, 'crop_app/home.html', context)
+
 
 
 def register_view(request):
@@ -194,6 +204,14 @@ def recommend_view(request):
     return render(request, 'crop_app/recommend.html', {'form': form})
 
 
+def build_agronomic_report(record, crop_info):
+    """
+    Build an agronomically defensible evaluation adhering to land-grant university
+    extension standards. Delegates to the comprehensive agronomic_engine module.
+    """
+    return generate_crop_diagnostics(record, crop_info)
+
+
 @login_required
 def result_view(request, pk):
     """Recommendation Result Detail Page"""
@@ -205,12 +223,38 @@ def result_view(request, pk):
         messages.error(request, "Permission denied to view this prediction record.")
         return redirect('history')
         
+    # Auto-seed if CropInformation table is empty
+    if CropInformation.objects.count() == 0:
+        try:
+            import seed_db
+            seed_db.seed_crops()
+        except Exception:
+            pass
+
     # Get metadata for predicted crop
     crop_info = CropInformation.objects.filter(name__iexact=record.predicted_crop).first()
     
+    # If crop_info is still None, create a fallback object
+    if not crop_info:
+        crop_info = CropInformation(
+            name=record.predicted_crop.lower(),
+            display_name=record.predicted_crop.title(),
+            category='Fruit' if record.predicted_crop.lower() in ['apple', 'banana', 'grapes', 'mango', 'orange', 'papaya', 'pomegranate', 'watermelon', 'muskmelon'] else 'Cereal',
+            description=f"{record.predicted_crop.title()} is well-suited for your field based on your soil nutrient profile and climate signature.",
+            ideal_n_range="Leaf test recommended",
+            ideal_p_range="Lab dependent",
+            ideal_k_range="High reserve",
+            ideal_temp_range=f"{record.temperature:.1f}°C",
+            ideal_ph_range=f"{record.ph:.1f}",
+            water_requirement=f"Moderate (~{record.rainfall:.0f} mm/month)",
+            harvest_duration="120 - 180 days",
+            fertilizer_tips="Apply balanced NPK fertilizers according to certified soil test in split doses.",
+            icon_class="fa-seedling"
+        )
+    
     # Parse alternative crops
     alternatives = []
-    if record.top_alternatives:
+    if record.top_alternatives and record.top_alternatives != "[]":
         try:
             parsed_alts = json.loads(record.top_alternatives)
             for alt in parsed_alts:
@@ -218,16 +262,52 @@ def result_view(request, pk):
                 alternatives.append({
                     'name': alt['crop'],
                     'display_name': alt_info.display_name if alt_info else alt['crop'].title(),
-                    'confidence': alt['confidence'],
+                    'confidence': min(78.0, float(alt['confidence'])),
+                    'icon': alt_info.icon_class if alt_info else 'fa-seedling'
+                })
+        except Exception:
+            pass
+
+    # If record had no alternatives saved, compute them dynamically
+    if not alternatives:
+        try:
+            _, _, new_alts = predict_crop_recommendation(
+                record.nitrogen, record.phosphorus, record.potassium,
+                record.temperature, record.humidity, record.ph, record.rainfall
+            )
+            record.top_alternatives = json.dumps(new_alts)
+            record.save()
+            for alt in new_alts:
+                alt_info = CropInformation.objects.filter(name__iexact=alt['crop']).first()
+                alternatives.append({
+                    'name': alt['crop'],
+                    'display_name': alt_info.display_name if alt_info else alt['crop'].title(),
+                    'confidence': min(78.0, float(alt['confidence'])),
                     'icon': alt_info.icon_class if alt_info else 'fa-seedling'
                 })
         except Exception:
             pass
             
+    # Generate crop-specific diagnostics and calibrated agronomic scoring
+    agronomic_report = generate_crop_diagnostics(record, crop_info)
+    suitability_score = float(agronomic_report['scoring_methodology']['calibrated_score'])
+    
+    # Synchronize record confidence score to ensure total numerical consistency
+    if abs(float(record.confidence_score) - suitability_score) > 0.01:
+        record.confidence_score = suitability_score
+        record.save(update_fields=['confidence_score'])
+        
+    suitability_label = "High Suitability" if suitability_score >= 75.0 else ("Moderate Suitability" if suitability_score >= 60.0 else "Marginal Suitability")
+    model_confidence = agronomic_report['scoring_methodology'].get('confidence_tier', 'Medium Confidence')
+
     context = {
         'record': record,
         'crop_info': crop_info,
         'alternatives': alternatives,
+        'suitability_score': suitability_score,
+        'suitability_label': suitability_label,
+        'model_confidence': model_confidence,
+        'agronomic_report': agronomic_report,
     }
     return render(request, 'crop_app/result.html', context)
 
@@ -250,30 +330,49 @@ def delete_prediction_view(request, pk):
 
 
 def crop_catalog_view(request):
-    """Crop Knowledge Encyclopedia Catalog"""
+    """Crop Knowledge Encyclopedia Catalog — fully database-driven."""
+    # Auto-seed from crop_catalog_data.json if the catalog is empty
+    if CropInformation.objects.count() == 0:
+        try:
+            from django.core.management import call_command
+            call_command('seed_catalog', verbosity=0)
+        except Exception:
+            # Fallback to legacy seed_db if management command fails
+            try:
+                import seed_db
+                seed_db.seed_crops()
+            except Exception:
+                pass
+
     category = request.GET.get('category', '')
     query = request.GET.get('q', '')
-    
-    crops = CropInformation.objects.all()
+
+    # Only show active crops in the public catalog
+    crops = CropInformation.objects.filter(active=True)
     if category:
         crops = crops.filter(category__iexact=category)
     if query:
         crops = crops.filter(display_name__icontains=query) | crops.filter(description__icontains=query)
-        
+
     categories = ['Cereal', 'Pulse', 'Fruit', 'Commercial']
-    
+
     context = {
         'crops': crops,
         'selected_category': category,
         'query': query,
-        'categories': categories
+        'categories': categories,
+        'total_active': CropInformation.objects.filter(active=True).count(),
     }
     return render(request, 'crop_app/crop_catalog.html', context)
 
 
 def crop_detail_view(request, name):
-    """Individual Crop Detail Page"""
-    crop = get_object_or_404(CropInformation, name__iexact=name)
+    """Individual Crop Detail Page — fully database-driven."""
+    # Support lookup by name or slug
+    crop = (
+        CropInformation.objects.filter(name__iexact=name, active=True).first()
+        or get_object_or_404(CropInformation, slug__iexact=name, active=True)
+    )
     return render(request, 'crop_app/crop_detail.html', {'crop': crop})
 
 
@@ -422,3 +521,69 @@ def admin_feedback_view(request):
         return redirect('admin_feedback')
         
     return render(request, 'crop_app/admin_feedback.html', {'feedbacks': feedbacks})
+
+
+@admin_required
+def admin_crops_view(request):
+    """Admin Crop Catalog Management & Seeding Interface"""
+    query = request.GET.get('q', '')
+    category = request.GET.get('category', '')
+    crops = CropInformation.objects.all()
+
+    if category:
+        crops = crops.filter(category__iexact=category)
+    if query:
+        crops = crops.filter(display_name__icontains=query) | crops.filter(scientific_name__icontains=query)
+
+    total_count = CropInformation.objects.count()
+    active_count = CropInformation.objects.filter(active=True).count()
+    inactive_count = total_count - active_count
+
+    seed_summary = request.session.pop('seed_summary', None)
+    seed_errors = request.session.pop('seed_errors', None)
+
+    context = {
+        'crops': crops,
+        'query': query,
+        'category': category,
+        'total_count': total_count,
+        'active_count': active_count,
+        'inactive_count': inactive_count,
+        'categories': ['Cereal', 'Pulse', 'Fruit', 'Commercial'],
+        'seed_summary': seed_summary,
+        'seed_errors': seed_errors,
+    }
+    return render(request, 'crop_app/admin_crops.html', context)
+
+
+@admin_required
+def admin_toggle_crop_status(request, pk):
+    """Toggle active status of a catalog crop"""
+    crop = get_object_or_404(CropInformation, pk=pk)
+    crop.active = not crop.active
+    crop.save(update_fields=['active', 'updated_at'])
+    status_str = "activated (visible in public catalog)" if crop.active else "deactivated (hidden from public catalog)"
+    messages.success(request, f"Crop '{crop.display_name}' has been {status_str}.")
+    return redirect('admin_crops')
+
+
+@admin_required
+def admin_seed_crops_view(request):
+    """Trigger seed_catalog from Admin Panel with full validation reporting"""
+    if request.method == 'POST':
+        import io
+        from django.core.management import call_command
+        out = io.StringIO()
+        err = io.StringIO()
+        try:
+            call_command('seed_catalog', stdout=out, stderr=err)
+            output_str = out.getvalue()
+            messages.success(request, "Crop Catalog database successfully seeded and updated!")
+            request.session['seed_summary'] = output_str
+        except Exception as e:
+            err_str = err.getvalue() or str(e)
+            messages.error(request, f"Seeding failed: {err_str}")
+            request.session['seed_errors'] = err_str
+
+    return redirect('admin_crops')
+

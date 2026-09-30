@@ -9,7 +9,7 @@
             <h2 class="font-weight-bold mb-1">
                 <i class="fa-solid fa-book-open text-success me-2"></i> Crop Knowledge Encyclopedia
             </h2>
-            <p class="text-muted mb-0">Browse agricultural parameters, water requirements, and cultivation advice for 22 crops</p>
+            <p class="text-muted mb-0">Browse agricultural parameters, water requirements, and cultivation advice for {{ total_active|default:crops.count }} crops</p>
         </div>
         
         <!-- Search & Filter Form -->
@@ -22,7 +22,7 @@
     <!-- Category Pills -->
     <div class="mb-4 d-flex flex-wrap gap-2">
         <a href="{% url 'crop_catalog' %}" class="btn btn-sm {% if not selected_category %}btn-success{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
-            All Crops (22)
+            All Crops ({{ total_active|default:crops.count }})
         </a>
         {% for cat in categories %}
             <a href="{% url 'crop_catalog' %}?category={{ cat }}" class="btn btn-sm {% if selected_category == cat %}btn-success{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
@@ -37,7 +37,12 @@
         <div class="col-md-6 col-lg-4">
             <div class="agri-card h-100 d-flex flex-column">
                 <div class="agri-card-header d-flex justify-content-between align-items-center">
-                    <span><i class="fa-solid {{ crop.icon_class }} me-2"></i>{{ crop.display_name }}</span>
+                    <div>
+                        <span><i class="fa-solid {{ crop.icon_class }} me-2"></i>{{ crop.display_name }}</span>
+                        {% if crop.scientific_name %}
+                        <small class="d-block text-white-50 fst-italic" style="font-size: 0.72rem;">{{ crop.scientific_name }}</small>
+                        {% endif %}
+                    </div>
                     <span class="badge bg-light text-dark">{{ crop.category }}</span>
                 </div>
                 <div class="p-3 flex-grow-1">
@@ -59,12 +64,12 @@
                     </div>
 
                     <div class="border-top pt-2">
-                        <small class="text-muted d-block">Ideal Soil pH: <strong>{{ crop.ideal_ph_range }}</strong></small>
-                        <small class="text-muted d-block">Ideal Temp: <strong>{{ crop.ideal_temp_range }}</strong></small>
+                        <small class="text-muted d-block">Typical Soil pH: <strong>{{ crop.ideal_ph_range }}</strong></small>
+                        <small class="text-muted d-block">Typical Temp: <strong>{{ crop.ideal_temp_range }}</strong></small>
                     </div>
                 </div>
                 <div class="p-3 pt-0 border-top-0">
-                    <a href="{% url 'crop_detail' crop.name %}" class="btn btn-sm btn-agri w-100">
+                    <a href="{% url 'crop_detail' crop.slug|default:crop.name %}" class="btn btn-sm btn-agri w-100">
                         <i class="fa-solid fa-circle-info me-1"></i> Full Agronomic Guide
                     </a>
                 </div>

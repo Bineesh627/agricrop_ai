@@ -1,6 +1,6 @@
 {% extends 'crop_app/base.html' %}
 
-{% block title %}Recommendation Result - {{ record.predicted_crop|title }} | AgriCrop AI{% endblock %}
+{% block title %}Agronomic Evaluation - {{ record.predicted_crop|title }} | AgriCrop AI{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -9,34 +9,58 @@
         <div class="p-4 p-md-5 text-white" style="background: linear-gradient(135deg, #081c15 0%, #1b4332 50%, #2d6a4f 100%);">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <span class="badge bg-warning text-dark px-3 py-2 fs-6 rounded-pill mb-3">
-                        <i class="fa-solid fa-square-check me-1"></i> AI Recommended Crop Result
-                    </span>
+                    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                        <span class="badge bg-success text-white px-3 py-2 fs-6 rounded-pill">
+                            <i class="fa-solid fa-wheat-awn me-1"></i> AI Recommended Primary Crop
+                        </span>
+                        <span class="badge bg-warning text-dark px-3 py-2 fs-6 rounded-pill">
+                            <i class="fa-solid fa-gauge-high me-1"></i> Preliminary Agronomic Suitability: {{ suitability_score }} / 100
+                        </span>
+                        <span class="badge bg-light text-dark px-3 py-2 fs-6 rounded-pill border">
+                            <i class="fa-solid fa-circle-info me-1"></i> Model Confidence: {{ model_confidence }}
+                        </span>
+                    </div>
+
                     <h1 class="display-4 font-weight-bold mb-2">
                         <i class="fa-solid {{ crop_info.icon_class|default:'fa-seedling' }} text-success me-3"></i>
                         {{ crop_info.display_name|default:record.predicted_crop|title }}
+                        {% if agronomic_report.profile.scientific_name %}<small class="fs-4 text-white-50 font-italic">({{ agronomic_report.profile.scientific_name }})</small>{% endif %}
                     </h1>
-                    <p class="lead text-white-50 mb-4">
-                        Based on your field's soil nutrient parameters and climatic signature, <strong>{{ crop_info.display_name|default:record.predicted_crop|title }}</strong> is the optimal crop for maximum yield.
+
+                    <p class="lead text-white-50 mb-2">
+                        Based on your field's soil nutrient reserves and growing season climate signature, <strong>{{ crop_info.display_name|default:record.predicted_crop|title }}</strong> demonstrates the strongest ecological alignment for cultivation.
                     </p>
-                    
-                    <div class="d-flex align-items-center gap-3">
-                        <div>
-                            <span class="text-muted small d-block">AI Model Match Confidence</span>
-                            <div class="progress mt-1" style="width: 200px; height: 12px; background: rgba(255,255,255,0.2);">
-                                <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ record.confidence_score }}%;"></div>
+
+                    <div class="alert alert-light border small text-muted mb-3 py-2">
+                        <i class="fa-solid fa-circle-info text-info me-1"></i> <strong>Important Clarification:</strong> This score represents environmental and agronomic compatibility based on available soil and weather inputs on a 0–100 scale. It is <strong>not</strong> a probability of yield, crop survival, or financial success.
+                    </div>
+
+                    <div class="row g-3 align-items-center">
+                        <div class="col-sm-6">
+                            <span class="text-white-50 small d-block">Agronomic Environmental Suitability Index</span>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <div class="progress flex-grow-1" style="height: 12px; background: rgba(255,255,255,0.2);">
+                                    <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ suitability_score }}%;"></div>
+                                </div>
+                                <span class="fs-5 font-weight-bold text-success">{{ suitability_score }} / 100</span>
                             </div>
                         </div>
-                        <span class="fs-4 font-weight-bold text-success">{{ record.confidence_score }}%</span>
+                        <div class="col-sm-6">
+                            <span class="text-white-50 small d-block">Validation Status</span>
+                            <small class="text-white-50 d-block mt-1">
+                                <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Certified laboratory soil test and {{ agronomic_report.profile.display_name }} field management verification required.
+                            </small>
+                        </div>
                     </div>
                 </div>
 
                 <div class="col-md-4 text-center mt-4 mt-md-0">
                     <div class="bg-white text-dark p-4 rounded-4 shadow">
-                        <span class="text-muted small text-uppercase font-weight-bold d-block mb-1">Crop Category</span>
-                        <h4 class="font-weight-bold text-success mb-3">{{ crop_info.category|default:"Cereal" }}</h4>
-                        <a href="#cultivation-guide" class="btn btn-agri btn-sm w-100">
-                            <i class="fa-solid fa-book-open me-1"></i> View Growing Guide
+                        <span class="text-muted small text-uppercase font-weight-bold d-block mb-1">Crop Classification</span>
+                        <h3 class="font-weight-bold text-success mb-1">{{ agronomic_report.profile.category|default:crop_info.category|default:"Crop" }}</h3>
+                        <span class="badge bg-secondary mb-3">{{ agronomic_report.profile.growth_habit }}</span>
+                        <a href="{% url 'crop_detail' crop_info.name|default:record.predicted_crop %}" class="btn btn-agri btn-sm w-100">
+                            <i class="fa-solid fa-book-open me-1"></i> Full Encyclopedia Profile
                         </a>
                     </div>
                 </div>
@@ -47,57 +71,69 @@
     <div class="row g-4">
         <!-- Left Column: Input Parameter Summary & Visual Breakdown -->
         <div class="col-lg-5">
-            <div class="agri-card p-4 h-100">
-                <h5 class="font-weight-bold text-success mb-3">
-                    <i class="fa-solid fa-list-check me-2"></i> Field Input Metrics
-                </h5>
+            <div class="agri-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-weight-bold text-success mb-0">
+                        <i class="fa-solid fa-list-check me-2"></i> Field Input Metrics
+                    </h5>
+                    <span class="badge bg-light text-secondary border">7 Parameters Assessed</span>
+                </div>
+
                 <div class="row g-2 mb-4">
                     <div class="col-6">
                         <div class="metric-box">
                             <span class="metric-label">Nitrogen (N)</span>
-                            <div class="metric-val">{{ record.nitrogen }} <small class="fs-6 text-muted">kg/ha</small></div>
+                            <div class="metric-val">{{ record.nitrogen }} <small class="fs-6 text-muted">kg/ha equiv.</small></div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Available Mineral N</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="metric-box">
                             <span class="metric-label">Phosphorus (P)</span>
-                            <div class="metric-val">{{ record.phosphorus }} <small class="fs-6 text-muted">kg/ha</small></div>
+                            <div class="metric-val">{{ record.phosphorus }} <small class="fs-6 text-muted">kg/ha equiv.</small></div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Available P (Extraction dep.)</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="metric-box">
                             <span class="metric-label">Potassium (K)</span>
-                            <div class="metric-val">{{ record.potassium }} <small class="fs-6 text-muted">kg/ha</small></div>
+                            <div class="metric-val">{{ record.potassium }} <small class="fs-6 text-muted">kg/ha equiv.</small></div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Exchangeable K Reserve</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="metric-box">
                             <span class="metric-label">Soil pH</span>
                             <div class="metric-val">{{ record.ph }}</div>
+                            <small class="text-muted" style="font-size: 0.72rem;">1:2.5 Water Suspension</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="metric-box">
-                            <span class="metric-label">Temperature</span>
+                            <span class="metric-label">Mean Temperature</span>
                             <div class="metric-val">{{ record.temperature }} <small class="fs-6 text-muted">°C</small></div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Growing Season Daytime</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="metric-box">
-                            <span class="metric-label">Humidity</span>
+                            <span class="metric-label">Relative Humidity</span>
                             <div class="metric-val">{{ record.humidity }} <small class="fs-6 text-muted">%</small></div>
+                            <small class="text-warning font-weight-bold" style="font-size: 0.72rem;">Elevated Disease Favorability</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="metric-box">
-                            <span class="metric-label">Rainfall</span>
-                            <div class="metric-val">{{ record.rainfall }} <small class="fs-6 text-muted">mm</small></div>
+                            <span class="metric-label">Precipitation</span>
+                            <div class="metric-val">{{ record.rainfall }} <small class="fs-6 text-muted">mm/month</small></div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Monthly Average</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="metric-box">
-                            <span class="metric-label">Soil / Season</span>
+                            <span class="metric-label">Soil / Cropping Season</span>
                             <div class="metric-val fs-6">{{ record.soil_type }} / {{ record.season }}</div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Texture & Cycle</small>
                         </div>
                     </div>
                 </div>
@@ -108,66 +144,259 @@
                     <canvas id="nutrientChart"></canvas>
                 </div>
             </div>
+
+            <!-- Agronomic Benchmark Reference Card -->
+            <div class="agri-card p-4 mb-4">
+                <h6 class="font-weight-bold text-success mb-3">
+                    <i class="fa-solid fa-compass-drafting me-2"></i> Standard Botanical Reference Envelopes
+                </h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded border text-center h-100">
+                            <span class="d-block small text-muted">Indicative Water Need</span>
+                            <strong class="text-dark small"><i class="fa-solid fa-droplet text-primary me-1"></i> {{ agronomic_report.profile.water_need }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded border text-center h-100">
+                            <span class="d-block small text-muted">Harvesting Timeline</span>
+                            <strong class="text-dark small"><i class="fa-solid fa-calendar-day text-warning me-1"></i> {{ agronomic_report.profile.harvest_duration }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded border text-center h-100">
+                            <span class="d-block small text-muted">Target Soil pH</span>
+                            <strong class="text-dark small"><i class="fa-solid fa-flask text-success me-1"></i> {{ agronomic_report.profile.ph_target }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded border text-center h-100">
+                            <span class="d-block small text-muted">Growing Temp</span>
+                            <strong class="text-dark small"><i class="fa-solid fa-temperature-three-quarters text-danger me-1"></i> {{ agronomic_report.profile.temp_target }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unmeasured Factors Warning Card -->
+            <div class="card border-warning bg-light p-3 mb-4 rounded-3 shadow-sm">
+                <h6 class="font-weight-bold text-dark mb-2">
+                    <i class="fa-solid fa-clipboard-question text-warning me-1"></i> Insufficient / Unmeasured Data Notice
+                </h6>
+                <p class="small text-muted mb-2">The following critical {{ agronomic_report.profile.display_name }} field parameters were not supplied and require on-site verification before capital investment:</p>
+                <ul class="list-unstyled mb-0 small text-secondary">
+                    {% for factor in agronomic_report.unmeasured_factors %}
+                    <li class="mb-1 d-flex align-items-start gap-2">
+                        <i class="fa-solid fa-circle-exclamation text-warning mt-1" style="font-size: 0.8rem;"></i>
+                        <span>{{ factor }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
 
-        <!-- Right Column: Cultivation Advice & Alternatives -->
+        <!-- Right Column: Cultivation Advice, Diagnostics & Extension Protocol -->
         <div class="col-lg-7" id="cultivation-guide">
             <div class="agri-card p-4 mb-4">
-                <h4 class="font-weight-bold text-success mb-3">
-                    <i class="fa-solid fa-wheat-awn-circle-exclamation me-2"></i> Cultivation & Agronomic Guidance
-                </h4>
-
-                <p class="text-secondary mb-4">{{ crop_info.description }}</p>
-
-                <div class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <div class="p-3 bg-light rounded border">
-                            <span class="text-muted small d-block">Water Requirement</span>
-                            <strong class="text-dark"><i class="fa-solid fa-droplet text-primary me-1"></i> {{ crop_info.water_requirement }}</strong>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="p-3 bg-light rounded border">
-                            <span class="text-muted small d-block">Harvest Duration</span>
-                            <strong class="text-dark"><i class="fa-solid fa-calendar-day text-warning me-1"></i> {{ crop_info.harvest_duration }}</strong>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="p-3 bg-light rounded border">
-                            <span class="text-muted small d-block">Ideal Soil pH Range</span>
-                            <strong class="text-dark"><i class="fa-solid fa-flask text-success me-1"></i> {{ crop_info.ideal_ph_range }}</strong>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="p-3 bg-light rounded border">
-                            <span class="text-muted small d-block">Ideal Temperature</span>
-                            <strong class="text-dark"><i class="fa-solid fa-temperature-three-quarters text-danger me-1"></i> {{ crop_info.ideal_temp_range }}</strong>
-                        </div>
-                    </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="font-weight-bold text-success mb-0">
+                        <i class="fa-solid fa-microscope me-2"></i> Agronomic & Extension Diagnostic Report
+                    </h4>
+                    <span class="badge bg-success-subtle text-success border border-success">ICAR / KVK Extension Aligned</span>
                 </div>
 
-                <div class="alert alert-success border-0 shadow-sm mb-4">
-                    <h6 class="font-weight-bold text-success mb-2">
-                        <i class="fa-solid fa-lightbulb me-1"></i> Soil Management & Fertilizer Recommendation:
+                <!-- Why the Model Selected this Crop -->
+                <div class="card border-0 bg-light p-3 mb-4 rounded-3 shadow-sm">
+                    <h6 class="font-weight-bold text-dark mb-2">
+                        <i class="fa-solid fa-lightbulb text-warning me-1"></i> Why the Model Selected {{ crop_info.display_name|default:record.predicted_crop|title }}:
                     </h6>
-                    <p class="small mb-0">{{ crop_info.fertilizer_tips }}</p>
+                    <ul class="list-unstyled mb-0 small text-secondary">
+                        {% for reason in agronomic_report.why_recommended %}
+                        <li class="mb-2 d-flex align-items-start gap-2">
+                            <i class="fa-solid fa-circle-check text-success mt-1"></i>
+                            <span>{{ reason }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
                 </div>
 
-                <!-- Runner-Up / Alternative Crop Recommendations -->
+                <!-- Parameter-by-Parameter Scientific Assessment Table -->
+                <h5 class="font-weight-bold text-dark mb-3">
+                    <i class="fa-solid fa-table-list text-primary me-2"></i> Parameter Analysis & Agronomic Diagnostic Interpretation
+                </h5>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm table-bordered align-middle mb-0">
+                        <thead class="table-success small text-uppercase">
+                            <tr>
+                                <th style="width: 24%;">Parameter</th>
+                                <th style="width: 18%;">Input Value</th>
+                                <th style="width: 20%;">Target / Benchmark</th>
+                                <th style="width: 38%;">Status & Scientific Interpretation</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            {% for item in agronomic_report.parameters_eval %}
+                            <tr>
+                                <td class="font-weight-bold">{{ item.param }}</td>
+                                <td>{{ item.val }}</td>
+                                <td class="text-muted">{{ item.benchmark }}</td>
+                                <td>
+                                    <span class="badge bg-{{ item.badge }} mb-1">{{ item.status }}</span>
+                                    <div class="text-secondary" style="font-size: 0.8rem; line-height: 1.35;">{{ item.note }}</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Model Scoring Methodology & Agronomic Uncertainty Breakdown -->
+                <div class="card border-0 bg-light p-3 mb-4 rounded-3 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <h6 class="font-weight-bold text-dark mb-0">
+                            <i class="fa-solid fa-calculator text-primary me-1"></i> Suitability Scoring & Uncertainty Breakdown
+                        </h6>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="badge bg-primary-subtle text-primary border border-primary">
+                                <i class="fa-solid fa-brain me-1"></i> ML Engine: Random Forest
+                            </span>
+                            <span class="badge bg-success-subtle text-success border border-success">
+                                <i class="fa-solid fa-seedling me-1"></i> Suitability Engine: Weighted Agronomic Model
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Two-Layer Architecture Overview: Clean Two-Row Format -->
+                    <div class="p-3 mb-3 bg-white rounded border small shadow-sm">
+                        <!-- Row 1: RF Crop Selection -->
+                        <div class="d-flex align-items-center gap-3 pb-2 mb-2 border-bottom flex-wrap">
+                            <span class="text-muted" style="min-width: 140px; font-size: 0.75rem;">
+                                <i class="fa-solid fa-brain text-primary me-1"></i> RF Crop Selection
+                            </span>
+                            <strong class="text-dark">{{ crop_info.display_name|default:record.predicted_crop|title }}</strong>
+                            <span class="ms-auto text-muted" style="font-size: 0.72rem;">
+                                RF Class Consensus:
+                                <strong class="text-primary">{{ agronomic_report.scoring_methodology.rf_class_consensus }}%</strong>
+                                <span class="text-muted"> (Ensemble vote across 100 decision trees)</span>
+                            </span>
+                        </div>
+                        <!-- Row 2: Agronomic Score Flow -->
+                        <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size: 0.82rem;">
+                            <span class="text-muted">Base Agronomic Score:</span>
+                            <strong class="text-secondary">{{ agronomic_report.scoring_methodology.base_agronomic_score }} / 100</strong>
+                            <span class="text-muted mx-1">&#8594;</span>
+                            <span class="text-muted">Uncertainty Penalty:</span>
+                            <strong class="text-danger">{{ agronomic_report.scoring_methodology.uncertainty_penalty }} pts</strong>
+                            <span class="text-muted mx-1">&#8594;</span>
+                            <span class="text-muted">Final Suitability:</span>
+                            <strong class="text-success fs-6">{{ suitability_score }} / 100</strong>
+                        </div>
+                    </div>
+                        </div>
+                    </div>
+
+                    <p class="small text-muted mb-2">
+                        Step-by-step breakdown deriving the <strong>{{ suitability_score }} / 100 Agronomic Suitability Score</strong> from your soil chemistry, texture, season, and climate metrics:
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered bg-white small mb-2">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Evaluation Component</th>
+                                    <th style="width: 18%;" class="text-center">Weight / Impact</th>
+                                    <th>Methodological Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for step in agronomic_report.scoring_methodology.breakdown_steps %}
+                                <tr>
+                                    <td class="font-weight-bold">{{ step.label }}</td>
+                                    <td class="text-center font-weight-bold {% if '-' in step.impact %}text-danger{% elif '+' in step.impact %}text-success{% else %}text-secondary{% endif %}">{{ step.impact }}</td>
+                                    <td class="text-muted">{{ step.desc }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <small class="text-muted d-block">
+                        <i class="fa-solid fa-circle-info text-info me-1"></i> <strong>Result:</strong> {{ agronomic_report.scoring_methodology.final_suitability_summary }} ({{ model_confidence }}). Represents initial macro-environmental compatibility on a 0–100 scale; on-site soil profile and agronomic validation are recommended before field execution.
+                    </small>
+                </div>
+
+                <!-- Crop Climate Suitability & Pathogen Advisory -->
+                <div class="alert alert-warning border-0 shadow-sm mb-4">
+                    <h6 class="font-weight-bold text-dark mb-2">
+                        <i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> {{ agronomic_report.disease_name }}
+                    </h6>
+                    <div class="small text-secondary mb-2">
+                        <strong><i class="fa-solid fa-cloud-sun text-primary me-1"></i> {{ agronomic_report.chilling_advisory.primary_factor }}:</strong>
+                        {{ agronomic_report.chilling_advisory.cultivar_note }}
+                    </div>
+                    <div class="small text-secondary mb-2">
+                        <strong><i class="fa-solid fa-biohazard text-danger me-1"></i> Pathogen Advisory (Humidity {{ record.humidity }}%):</strong>
+                        {{ agronomic_report.disease_advisory }} {{ agronomic_report.chilling_advisory.spacing_advice }}
+                    </div>
+                    <div class="small text-secondary mb-0">
+                        <strong><i class="fa-solid fa-shield-halved text-info me-1"></i> Climate & Field Risk:</strong>
+                        {{ agronomic_report.chilling_advisory.frost_risk }}
+                    </div>
+                </div>
+
+                <!-- Conditional Fertility Management Protocol -->
+                <div class="card border-0 bg-light p-3 mb-4 rounded-3 shadow-sm">
+                    <h6 class="font-weight-bold text-success mb-2">
+                        <i class="fa-solid fa-flask-vial text-success me-1"></i> Soil Fertility Strategy & Management Protocol:
+                    </h6>
+                    <p class="small text-muted mb-2">Fertilizer applications should follow calibrated university soil test recommendations and crop growth stage rather than raw chemical values:</p>
+                    <ul class="list-unstyled mb-0 small text-secondary">
+                        {% for step in agronomic_report.fertility_protocol %}
+                        <li class="mb-2 d-flex align-items-start gap-2">
+                            <i class="fa-solid fa-arrow-right text-success mt-1"></i>
+                            <span>{{ step }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Alternative Crop Similarity Scores -->
                 {% if alternatives %}
-                    <h5 class="font-weight-bold text-dark mb-3">Top Alternative Crop Options</h5>
-                    <div class="row g-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="font-weight-bold text-dark mb-0">Alternative Crop Similarity Scores</h5>
+                        <span class="badge bg-light text-secondary border">Environmental Profile Proximity</span>
+                    </div>
+                    <p class="small text-muted mb-2">
+                        <i class="fa-solid fa-circle-info text-primary me-1"></i> Calculated via multi-dimensional normalized Euclidean distance across standardized benchmark envelopes:
+                    </p>
+                    <div class="row g-2 mb-3">
                         {% for alt in alternatives %}
                         <div class="col-md-4">
-                            <div class="p-3 bg-light rounded border text-center">
-                                <i class="fa-solid {{ alt.icon }} fs-4 text-success mb-2 d-block"></i>
-                                <h6 class="font-weight-bold mb-1">{{ alt.display_name }}</h6>
-                                <span class="badge bg-secondary">{{ alt.confidence }}% Suitability</span>
+                            <div class="p-3 bg-light rounded border text-center h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <i class="fa-solid {{ alt.icon }} fs-4 text-success mb-2 d-block"></i>
+                                    <h6 class="font-weight-bold mb-1">{{ alt.display_name }}</h6>
+                                </div>
+                                <div class="mt-2">
+                                    <span class="badge bg-secondary">{{ alt.confidence }}% Similarity Score</span>
+                                    <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">Geometric Profile Proximity</small>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
+                    <div class="alert alert-light border small text-muted mb-4">
+                        <i class="fa-solid fa-circle-exclamation text-warning me-1"></i> <strong>Important Clarification:</strong> Similarity scores represent geometric proximity to benchmark environmental envelopes. Similarity does <strong>not</strong> represent yield probability, economic viability, or a verified planting recommendation.
+                    </div>
                 {% endif %}
+
+                <!-- Extension Advisory Summary Box -->
+                <div class="alert alert-secondary border-0 small mb-0">
+                    <h6 class="font-weight-bold text-dark mb-1">
+                        <i class="fa-solid fa-graduation-cap text-primary me-1"></i> Agricultural Extension Recommendation
+                    </h6>
+                    <p class="mb-0 text-muted">
+                        {{ agronomic_report.extension_summary }}
+                    </p>
+                </div>
             </div>
 
             <!-- Action Buttons -->
@@ -198,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: ['Nitrogen', 'Phosphorus', 'Potassium', 'Temp (°C)', 'Humidity (%)', 'pH (x10)'],
             datasets: [{
-                label: 'Your Soil Input',
+                label: 'Your Field Parameters',
                 data: [
                     {{ record.nitrogen }},
                     {{ record.phosphorus }},

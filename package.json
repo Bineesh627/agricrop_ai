@@ -1,0 +1,9 @@
+{
+  "name": "agricrop-ai",
+  "version": "1.0.0",
+  "description": "AI-powered crop recommendation and agronomic knowledge encyclopedia",
+  "scripts": {
+    "seed:crops": "python manage.py seed_catalog",
+    "seed:dry-run": "python manage.py seed_catalog --dry-run"
+  }
+}

@@ -70,37 +70,37 @@
                                 <div class="mb-3">
                                     <label class="form-label font-weight-bold d-flex justify-content-between">
                                         <span>Nitrogen (N) <span class="text-danger">*</span></span>
-                                        <small class="text-muted">Target: 0 - 140 kg/ha</small>
+                                        <small class="text-muted">Available N: 0 - 140 kg/ha</small>
                                     </label>
                                     {{ form.nitrogen }}
-                                    <div class="form-text">Ratio of Nitrogen content in soil.</div>
+                                    <div class="form-text">Estimated available inorganic soil N (NO₃⁻ / NH₄⁺). Tissue test advised for perennials.</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label font-weight-bold d-flex justify-content-between">
                                         <span>Phosphorus (P) <span class="text-danger">*</span></span>
-                                        <small class="text-muted">Target: 5 - 145 kg/ha</small>
+                                        <small class="text-muted">Available P: 5 - 145 kg/ha</small>
                                     </label>
                                     {{ form.phosphorus }}
-                                    <div class="form-text">Ratio of Phosphorus content in soil.</div>
+                                    <div class="form-text">Extractable available soil phosphorus (e.g. Bray-1 or Mehlich-3 basis).</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label font-weight-bold d-flex justify-content-between">
                                         <span>Potassium (K) <span class="text-danger">*</span></span>
-                                        <small class="text-muted">Target: 5 - 205 kg/ha</small>
+                                        <small class="text-muted">Exchangeable K: 5 - 205 kg/ha</small>
                                     </label>
                                     {{ form.potassium }}
-                                    <div class="form-text">Ratio of Potassium content in soil.</div>
+                                    <div class="form-text">Exchangeable soil potassium reserve (K₂O equivalent).</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label font-weight-bold d-flex justify-content-between">
                                         <span>Soil pH Level <span class="text-danger">*</span></span>
-                                        <small class="text-muted">Range: 3.5 - 10.0</small>
+                                        <small class="text-muted">1:2.5 Suspension: 3.5 - 10.0</small>
                                     </label>
                                     {{ form.ph }}
-                                    <div class="form-text">Acidity/Alkalinity level of the soil.</div>
+                                    <div class="form-text">Active soil reaction index. Target for apples is 6.0 to 6.5.</div>
                                 </div>
                             </div>
 
@@ -112,11 +112,11 @@
 
                                 <div class="mb-3">
                                     <label class="form-label font-weight-bold d-flex justify-content-between">
-                                        <span>Temperature (°C) <span class="text-danger">*</span></span>
-                                        <small class="text-muted">Range: 8 - 45 °C</small>
+                                        <span>Mean Temperature (°C) <span class="text-danger">*</span></span>
+                                        <small class="text-muted">Growing Season: 8 - 45 °C</small>
                                     </label>
                                     {{ form.temperature }}
-                                    <div class="form-text">Average ambient temperature in Celsius.</div>
+                                    <div class="form-text">Average ambient temperature during active vegetative growth.</div>
                                 </div>
 
                                 <div class="mb-3">
@@ -125,16 +125,16 @@
                                         <small class="text-muted">Range: 14 - 100%</small>
                                     </label>
                                     {{ form.humidity }}
-                                    <div class="form-text">Relative humidity in percentage.</div>
+                                    <div class="form-text">Mean relative humidity. Sustained humidity >85% elevates foliar disease pressure.</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label font-weight-bold d-flex justify-content-between">
-                                        <span>Annual Rainfall (mm) <span class="text-danger">*</span></span>
-                                        <small class="text-muted">Range: 20 - 300 mm</small>
+                                        <span>Monthly Precipitation (mm / month) <span class="text-danger">*</span></span>
+                                        <small class="text-muted">Average: 20 - 300 mm/month</small>
                                     </label>
                                     {{ form.rainfall }}
-                                    <div class="form-text">Average rainfall in millimeters.</div>
+                                    <div class="form-text">Average monthly rainfall during the growing cycle.</div>
                                 </div>
 
                                 <div class="row g-2 mb-3">

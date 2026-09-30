@@ -88,39 +88,53 @@ class UserProfileForm(forms.ModelForm):
 
 class CropRecommendationForm(forms.Form):
     nitrogen = forms.FloatField(
-        min_value=0, max_value=200, label="Nitrogen (N) - ratio in soil (0 - 140 kg/ha)",
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 90', 'step': '0.1'})
+        min_value=0, max_value=200,
+        label="Nitrogen (N) - Soil Available N (kg/ha equivalent)",
+        help_text="Estimated available mineral N (NO3- / NH4+). Note: Soil N is transient; leaf tissue analysis is standard for perennial crops.",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 20.0', 'step': '0.1'})
     )
     phosphorus = forms.FloatField(
-        min_value=0, max_value=200, label="Phosphorus (P) - ratio in soil (5 - 145 kg/ha)",
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 42', 'step': '0.1'})
+        min_value=0, max_value=200,
+        label="Phosphorus (P) - Available P (kg/ha equivalent, e.g. Bray/Mehlich)",
+        help_text="Extractable available soil phosphorus (lab extraction method dependent).",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 134.0', 'step': '0.1'})
     )
     potassium = forms.FloatField(
-        min_value=0, max_value=250, label="Potassium (K) - ratio in soil (5 - 205 kg/ha)",
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 43', 'step': '0.1'})
+        min_value=0, max_value=250,
+        label="Potassium (K) - Exchangeable K (kg/ha equivalent)",
+        help_text="Exchangeable soil potassium reserve (K2O / exchangeable K basis).",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 199.0', 'step': '0.1'})
     )
     temperature = forms.FloatField(
-        min_value=0, max_value=60, label="Temperature (°C) (8 - 45 °C)",
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 25.5', 'step': '0.1'})
+        min_value=0, max_value=60,
+        label="Mean Temperature (°C)",
+        help_text="Average daytime ambient temperature during the growing season.",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 22.6', 'step': '0.1'})
     )
     humidity = forms.FloatField(
-        min_value=0, max_value=100, label="Relative Humidity (%) (14 - 100%)",
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 80.0', 'step': '0.1'})
+        min_value=0, max_value=100,
+        label="Relative Humidity (%)",
+        help_text="Mean relative humidity. Note: High humidity (>85%) significantly elevates fungal disease pressure.",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 92.3', 'step': '0.1'})
     )
     ph = forms.FloatField(
-        min_value=1, max_value=14, label="Soil pH Value (3.5 - 10.0)",
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 6.5', 'step': '0.1'})
+        min_value=1, max_value=14,
+        label="Soil pH (1:2.5 soil-water suspension)",
+        help_text="Measured soil reaction. Target for apples is typically 6.0 to 6.5.",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 5.9', 'step': '0.1'})
     )
     rainfall = forms.FloatField(
-        min_value=0, max_value=500, label="Rainfall (mm) (20 - 300 mm)",
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 200.0', 'step': '0.1'})
+        min_value=0, max_value=500,
+        label="Monthly Precipitation / Rainfall (mm / month)",
+        help_text="Average monthly precipitation during the growing / vegetative cycle.",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 112.0', 'step': '0.1'})
     )
     soil_type = forms.ChoiceField(
-        choices=SOIL_TYPE_CHOICES, label="Soil Type",
+        choices=SOIL_TYPE_CHOICES, label="Soil Texture & Type",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     season = forms.ChoiceField(
-        choices=SEASON_CHOICES, label="Cropping Season",
+        choices=SEASON_CHOICES, label="Cropping Season / Cycle",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 

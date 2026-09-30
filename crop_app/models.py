@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 from django.contrib.auth.models import User
 
 USER_TYPE_CHOICES = (
@@ -18,6 +19,7 @@ FEEDBACK_STATUS_CHOICES = (
     ('RESOLVED', 'Resolved / Responded'),
 )
 
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='FARMER')
@@ -34,19 +36,115 @@ class UserProfile(models.Model):
 
 
 class CropInformation(models.Model):
-    name = models.CharField(max_length=50, unique=True) # e.g. rice
-    display_name = models.CharField(max_length=100) # e.g. Rice (Paddy)
-    category = models.CharField(max_length=50, choices=CROP_CATEGORY_CHOICES, default='Cereal')
-    description = models.TextField()
-    ideal_n_range = models.CharField(max_length=50, default="80 - 100 kg/ha")
-    ideal_p_range = models.CharField(max_length=50, default="35 - 50 kg/ha")
-    ideal_k_range = models.CharField(max_length=50, default="35 - 50 kg/ha")
-    ideal_temp_range = models.CharField(max_length=50, default="20°C - 27°C")
-    ideal_ph_range = models.CharField(max_length=50, default="6.0 - 7.0")
-    water_requirement = models.CharField(max_length=100, default="High (1500 - 2500 mm)")
-    harvest_duration = models.CharField(max_length=100, default="120 - 150 days")
-    fertilizer_tips = models.TextField(default="Apply Nitrogen in 3 split doses: Basal, Tillering, and Panicle initiation.")
-    icon_class = models.CharField(max_length=50, default="fa-seedling")
+    """
+    Crop Catalog Reference Model.
+    Stores indicative agronomic reference data — NOT personalised fertiliser advice.
+    All numeric range fields are for cataloguing and UI display only.
+    Actual agronomic scoring uses the separate AgronomicEngine profiles.
+    """
+    # ── Core identity ──────────────────────────────────────────────────────────
+    name = models.CharField(
+        max_length=50, unique=True,
+        help_text="ML key (e.g. 'rice', 'maize') — must match agronomic engine crop keys"
+    )
+    slug = models.SlugField(
+        max_length=60, unique=True, blank=True,
+        help_text="URL-safe unique identifier auto-derived from name"
+    )
+    display_name = models.CharField(max_length=100, help_text="Human-readable name (e.g. 'Rice (Paddy)')")
+    scientific_name = models.CharField(
+        max_length=120, blank=True, default='',
+        help_text="Binomial scientific name (e.g. Oryza sativa)"
+    )
+    category = models.CharField(
+        max_length=50, choices=CROP_CATEGORY_CHOICES, default='Cereal'
+    )
+    description = models.TextField(
+        help_text="Cautious overview. Use indicative, typical, suitable terminology."
+    )
+
+    # ── Indicative nutrient ranges (display strings) ───────────────────────────
+    ideal_n_range = models.CharField(
+        max_length=80, default='',
+        verbose_name='Indicative Nitrogen (N) Range',
+        help_text="e.g. '60–120 kg/ha (indicative)'. NOT a universal prescription."
+    )
+    ideal_p_range = models.CharField(
+        max_length=80, default='',
+        verbose_name='Indicative Phosphorus (P) Range',
+    )
+    ideal_k_range = models.CharField(
+        max_length=80, default='',
+        verbose_name='Indicative Potassium (K) Range',
+    )
+
+    # ── Numeric bounds for validation (used by seeder validator) ──────────────
+    n_min = models.FloatField(null=True, blank=True, help_text="N lower bound (kg/ha)")
+    n_max = models.FloatField(null=True, blank=True, help_text="N upper bound (kg/ha)")
+    p_min = models.FloatField(null=True, blank=True)
+    p_max = models.FloatField(null=True, blank=True)
+    k_min = models.FloatField(null=True, blank=True)
+    k_max = models.FloatField(null=True, blank=True)
+    ph_min = models.FloatField(null=True, blank=True, help_text="Suitable pH lower bound")
+    ph_max = models.FloatField(null=True, blank=True, help_text="Suitable pH upper bound")
+    temp_min = models.FloatField(null=True, blank=True, help_text="Typical suitable temperature lower bound (°C)")
+    temp_max = models.FloatField(null=True, blank=True, help_text="Typical suitable temperature upper bound (°C)")
+
+    # ── Display strings ────────────────────────────────────────────────────────
+    ideal_temp_range = models.CharField(
+        max_length=80, default='',
+        verbose_name='Typical Suitable Temperature Range',
+    )
+    ideal_ph_range = models.CharField(
+        max_length=80, default='',
+        verbose_name='Typical Suitable Soil pH Range',
+    )
+    water_requirement = models.CharField(
+        max_length=150, default='',
+        verbose_name='Indicative Water Requirement',
+    )
+    harvest_duration = models.CharField(
+        max_length=150, default='',
+        verbose_name='Typical Harvest Duration',
+    )
+
+    # ── Extended reference fields ──────────────────────────────────────────────
+    soil_characteristics = models.TextField(
+        blank=True, default='',
+        help_text="Indicative suitable soil types and characteristics."
+    )
+    climate_requirements = models.TextField(
+        blank=True, default='',
+        help_text="Typical climatic conditions. Use cautious/indicative wording."
+    )
+    fertilizer_tips = models.TextField(
+        default='Apply NPK according to certified soil test and local extension recommendations.',
+        verbose_name='Soil & Fertilizer Reference Guidance',
+        help_text="Reference guidance only. Must not prescribe universal exact rates."
+    )
+    crop_notes = models.TextField(
+        blank=True, default='',
+        help_text="Crop-specific additional notes, warnings, or agronomic context."
+    )
+
+    # ── Metadata ───────────────────────────────────────────────────────────────
+    icon_class = models.CharField(max_length=50, default='fa-seedling')
+    active = models.BooleanField(
+        default=True,
+        help_text="Inactive crops are excluded from the public catalog."
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['category', 'display_name']
+        verbose_name = 'Crop Information'
+        verbose_name_plural = 'Crop Information Catalog'
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.display_name
@@ -65,7 +163,7 @@ class CropPredictionRecord(models.Model):
     season = models.CharField(max_length=50, default='Kharif')
     predicted_crop = models.CharField(max_length=50)
     confidence_score = models.FloatField(default=95.0)
-    top_alternatives = models.TextField(blank=True, default="[]")
+    top_alternatives = models.TextField(blank=True, default='[]')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

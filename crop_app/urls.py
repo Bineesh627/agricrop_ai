@@ -25,4 +25,7 @@ urlpatterns = [
     path('admin-panel/predictions/', views.admin_predictions_view, name='admin_predictions'),
     path('admin-panel/ml-model/', views.admin_ml_model_view, name='admin_ml_model'),
     path('admin-panel/feedback/', views.admin_feedback_view, name='admin_feedback'),
+    path('admin-panel/crops/', views.admin_crops_view, name='admin_crops'),
+    path('admin-panel/crops/toggle/<int:pk>/', views.admin_toggle_crop_status, name='admin_toggle_crop'),
+    path('admin-panel/crops/seed/', views.admin_seed_crops_view, name='admin_seed_crops'),
 ]
